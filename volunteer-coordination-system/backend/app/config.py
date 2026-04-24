@@ -19,3 +19,6 @@ class Config:
     }
     UPLOAD_FOLDER        = os.getenv('UPLOAD_FOLDER', 'uploads/')
     MAX_CONTENT_LENGTH   = int(os.getenv('MAX_CONTENT_LENGTH', 16777216))
+
+# Debug print - shows what DB URI is actually loaded
+print(">>> DB URI loaded:", os.getenv('SQLALCHEMY_DATABASE_URI', 'NOT FOUND')[:80])
