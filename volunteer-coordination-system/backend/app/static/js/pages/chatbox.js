@@ -395,16 +395,52 @@ function getMockRooms() {
         {
             id: 1, name: 'General Community',
             description: 'Open discussion for everyone',
+            type: 'general',
             unread: 0, last_msg: '', last_time: ''
         },
         {
             id: 2, name: 'Urgent Alerts',
             description: 'Post critical emergencies here',
+            type: 'urgent',
             unread: 0, last_msg: '', last_time: ''
         },
         {
             id: 3, name: 'NGO Announcements',
             description: 'Official NGO announcements',
+            type: 'announcements',
+            unread: 0, last_msg: '', last_time: ''
+        },
+        {
+            id: 4, name: 'Volunteers Only',
+            description: 'Private coordination for volunteers',
+            type: 'volunteers_only',
+            unread: 0, last_msg: '', last_time: ''
+        },
+        {
+            id: 5, name: 'Palladam Hub',
+            description: 'Coordination for Palladam area',
+            type: 'location_based',
+            location: 'Palladam',
+            unread: 0, last_msg: '', last_time: ''
+        },
+        {
+            id: 6, name: 'Ukkadam Hub',
+            description: 'Coordination for Ukkadam area',
+            type: 'location_based',
+            location: 'Ukkadam',
+            unread: 0, last_msg: '', last_time: ''
+        },
+        {
+            id: 7, name: 'Peelamedu Hub',
+            description: 'Coordination for Peelamedu area',
+            type: 'location_based',
+            location: 'Peelamedu',
+            unread: 0, last_msg: '', last_time: ''
+        },
+        {
+            id: 8, name: 'NGO & Community',
+            description: 'Shared space for NGO and Community members',
+            type: 'ngo_community',
             unread: 0, last_msg: '', last_time: ''
         }
     ]
