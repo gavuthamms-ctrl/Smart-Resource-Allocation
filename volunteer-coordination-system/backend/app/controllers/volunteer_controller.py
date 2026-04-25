@@ -188,9 +188,16 @@ def submit_field_report():
     assignment = TaskAssignment.query.get_or_404(assignment_id)
     assignment.field_notes = field_notes
     assignment.people_helped = people_helped
-    assignment.status = 'Pending Review'
+    assignment.status = 'Completed'
+    assignment.completed_at = datetime.utcnow()
+
+    # Also update the main task status
+    task = Task.query.get(assignment.task_id)
+    if task:
+        task.status = 'Completed'
 
     vol = Volunteer.query.get(assignment.volunteer_id)
+    vol.tasks_completed += 1
     vol.people_helped += people_helped
     vol.hours_volunteered += int(hours_spent)
     

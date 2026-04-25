@@ -221,7 +221,7 @@ function renderTimeline() {
             
             entry.innerHTML = `
                 <div class="timeline-dot ${isPulsing}"></div>
-                <div class="timeline-card priority-${task.priority.toLowerCase()}">
+                <div class="timeline-card priority-${task.priority.toLowerCase()}" data-assignment-id="${task.assignment_id}">
                     <div class="card-header-meta">
                         <span class="badge priority-${task.priority.toLowerCase()}">${task.priority}</span>
                         <span class="badge status-${task.status.toLowerCase().replace(' ', '-')}">${getStatusIcon(task.status)} ${task.status}</span>
@@ -402,7 +402,7 @@ function updateImpactCards() {
 async function updateTaskStatus(assignmentId, newStatus) {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/tasks/assignments/status', {
+        const res = await fetch('/api/volunteers/assignments/status', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -542,6 +542,7 @@ async function submitFieldReport() {
     const notes = document.getElementById('reportNotes').value;
     const people = document.getElementById('reportPeople').value;
     const hours = document.getElementById('reportHours').value;
+    const outcome = document.querySelector('input[name="outcome"]:checked').value;
     
     if (!notes || !people || !hours) {
         showToast("Please fill all required fields", "error");
@@ -554,7 +555,7 @@ async function submitFieldReport() {
     
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/tasks/report', {
+        const response = await fetch('/api/volunteers/tasks/report', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -565,28 +566,69 @@ async function submitFieldReport() {
                 field_notes: notes,
                 people_helped: parseInt(people),
                 hours_spent: parseFloat(hours),
-                outcome: document.querySelector('input[name="outcome"]:checked').value
+                outcome: outcome
             })
         });
         
-        const data = await res.json();
-        if (data.success) {
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
             showToast("Report submitted successfully!", "success");
-            closeModal('fieldReportModal');
-            await loadTaskHistory();
+            
+            // 1. Update Local State
+            const taskIndex = allTasks.findIndex(t => t.assignment_id === currentAssignmentId);
+            if (taskIndex !== -1) {
+                allTasks[taskIndex].status = 'Completed';
+                allTasks[taskIndex].completed_at = new Date().toISOString();
+                allTasks[taskIndex].people_helped = parseInt(people);
+            }
+            
+            // 2. Direct DOM Updates for immediate feedback
+            const taskCard = document.querySelector(`.timeline-card[data-assignment-id="${currentAssignmentId}"]`);
+            if (taskCard) {
+                // Change status badge
+                const statusBadge = taskCard.querySelector(`.status-in-progress`);
+                if (statusBadge) {
+                    statusBadge.className = 'badge status-completed';
+                    statusBadge.innerHTML = '✅ Completed';
+                }
+                
+                // Remove progress bar if exists
+                const progress = taskCard.querySelector('.progress-container');
+                if (progress) progress.remove();
+                
+                // Update actions button
+                const actions = taskCard.querySelector('.card-actions');
+                if (actions) {
+                    actions.innerHTML = `<button class="btn btn-outline" onclick="openCertificate(${currentAssignmentId})">🏆 Cert</button>`;
+                }
+            }
+
+            // Update Right Panel Tracker
+            const tracker = document.getElementById('taskTrackerContent');
+            if (tracker) {
+                tracker.innerHTML = `
+                    <div class="progress-steps">
+                        <div class="step completed"><div class="step-circle">✓</div><span class="step-label">Accepted</span></div>
+                        <div class="step completed"><div class="step-circle">✓</div><span class="step-label">Working</span></div>
+                        <div class="step current"><div class="step-circle">🏁</div><span class="step-label">Done</span></div>
+                    </div>
+                    <div style="text-align:center; color:var(--accent-green); font-weight:600; margin-top:15px;">✨ Task Accomplished!</div>
+                `;
+            }
+            
+            // Wait slightly for visual confirmation then close modal and re-render
+            setTimeout(() => {
+                closeModal('fieldReportModal');
+                applyFilters(); // This will handle moving the card to the completed section if needed
+            }, 1000);
+            
+        } else {
+            throw new Error(data.message || "Submission failed");
         }
     } catch (error) {
-        showToast("(Mock) Report saved successfully", "success");
-        closeModal('fieldReportModal');
-        // Update local mock
-        const task = allTasks.find(t => t.assignment_id === currentAssignmentId);
-        if (task) {
-            task.status = 'Pending Review';
-            task.field_notes = notes;
-            task.people_helped = parseInt(people);
-            applyFilters();
-        }
-    } finally {
+        console.error("Submission error:", error);
+        showToast("Error: " + error.message, "error");
         btn.disabled = false;
         btn.textContent = 'Submit Report & Mark Complete';
     }
